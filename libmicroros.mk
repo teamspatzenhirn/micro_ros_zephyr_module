@@ -111,6 +111,7 @@ $(COMPONENT_PATH)/micro_ros_src/install: configure_colcon_meta configure_toolcha
 		-DBUILD_TESTING=OFF \
 		-DCMAKE_BUILD_TYPE=$(BUILD_TYPE) \
 		-DCMAKE_TOOLCHAIN_FILE=$(COMPONENT_PATH)/zephyr_toolchain.cmake \
+	    -DSTATIC_ROSIDL_TYPESUPPORT_C=rosidl_typesupport_microxrcedds_c \
 		-DCMAKE_VERBOSE_MAKEFILE=OFF; \
 
 $(COMPONENT_PATH)/libmicroros.a: $(COMPONENT_PATH)/micro_ros_src/install
