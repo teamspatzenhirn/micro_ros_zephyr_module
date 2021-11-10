@@ -87,7 +87,7 @@ $(COMPONENT_PATH)/micro_ros_src/src:
 	git clone -b galactic https://github.com/ros2/rcl_logging src/rcl_logging; \
 	git clone -b galactic https://gitlab.com/micro-ROS/ros_tracing/ros2_tracing src/ros2_tracing; \
 	git clone -b galactic https://github.com/micro-ROS/micro_ros_utilities src/micro_ros_utilities; \
-	git clone -b master https://github.com/teamspatzenhirn/spatz_interfaces src/spatz_interfaces; \
+	git clone -b master https://github.com/teamspatzenhirn/spatz_interfaces_zephyr src/spatz_interfaces; \
     touch src/rosidl/rosidl_typesupport_introspection_cpp/COLCON_IGNORE; \
     touch src/rclc/rclc_examples/COLCON_IGNORE; \
     touch src/common_interfaces/actionlib_msgs/COLCON_IGNORE; \
