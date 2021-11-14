@@ -22,23 +22,32 @@ char uart_out_buffer[RING_BUF_SIZE];
 
 struct ring_buf out_ringbuf, in_ringbuf;
 
-static void uart_fifo_callback(struct device *dev){ 
+size_t min(size_t a, size_t b) {
+    if (a < b) {
+        return a;
+    } else {
+        return b;
+    }
+}
+
+
+static void uart_fifo_callback(const struct device *dev, void *p) {
     while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
         if (uart_irq_rx_ready(dev)) {
             int recv_len;
             char buffer[64];
-            size_t len = MIN(ring_buf_space_get(&in_ringbuf), sizeof(buffer));
+            size_t len = min(ring_buf_space_get(&in_ringbuf), sizeof(buffer));
 
-            if (len > 0){
+            if (len > 0) {
                 recv_len = uart_fifo_read(dev, buffer, len);
                 ring_buf_put(&in_ringbuf, buffer, recv_len);
             }
 
         }
 
-        if (uart_irq_tx_ready(dev)) {			
+        if (uart_irq_tx_ready(dev)) {
             char buffer[64];
-            int rb_len;
+            uint32_t rb_len;
 
             rb_len = ring_buf_get(&out_ringbuf, buffer, sizeof(buffer));
 
@@ -52,8 +61,8 @@ static void uart_fifo_callback(struct device *dev){
     }
 }
 
-bool zephyr_transport_open(struct uxrCustomTransport * transport){
-    zephyr_transport_params_t * params = (zephyr_transport_params_t*) transport->args;
+bool zephyr_transport_open(struct uxrCustomTransport *transport) {
+    zephyr_transport_params_t *params = (zephyr_transport_params_t *) transport->args;
 
     int ret;
     uint32_t baudrate, dtr = 0U;
@@ -99,7 +108,7 @@ bool zephyr_transport_open(struct uxrCustomTransport * transport){
     }
 
     /* Wait 1 sec for the host to do all settings */
-    k_busy_wait(1000*1000);
+    k_busy_wait(1000 * 1000);
 
     ret = uart_line_ctrl_get(params->uart_dev, UART_LINE_CTRL_BAUD_RATE, &baudrate);
     if (ret) {
@@ -114,35 +123,36 @@ bool zephyr_transport_open(struct uxrCustomTransport * transport){
     return true;
 }
 
-bool zephyr_transport_close(struct uxrCustomTransport * transport){
-    zephyr_transport_params_t * params = (zephyr_transport_params_t*) transport->args;
+bool zephyr_transport_close(struct uxrCustomTransport *transport) {
+    zephyr_transport_params_t *params = (zephyr_transport_params_t *) transport->args;
 
     return true;
 }
 
-size_t zephyr_transport_write(struct uxrCustomTransport* transport, const uint8_t * buf, size_t len, uint8_t * err){
-    zephyr_transport_params_t * params = (zephyr_transport_params_t*) transport->args;
+size_t zephyr_transport_write(struct uxrCustomTransport *transport, const uint8_t *buf, size_t len, uint8_t *err) {
+    zephyr_transport_params_t *params = (zephyr_transport_params_t *) transport->args;
 
     size_t wrote;
-    
+
     wrote = ring_buf_put(&out_ringbuf, buf, len);
-    
+
     uart_irq_tx_enable(params->uart_dev);
 
-    while (!ring_buf_is_empty(&out_ringbuf)){
+    while (!ring_buf_is_empty(&out_ringbuf)) {
         k_sleep(K_MSEC(5));
     }
-    
+
     return wrote;
 }
 
-size_t zephyr_transport_read(struct uxrCustomTransport* transport, uint8_t* buf, size_t len, int timeout, uint8_t* err){
-    zephyr_transport_params_t * params = (zephyr_transport_params_t*) transport->args;
+size_t
+zephyr_transport_read(struct uxrCustomTransport *transport, uint8_t *buf, size_t len, int timeout, uint8_t *err) {
+    zephyr_transport_params_t *params = (zephyr_transport_params_t *) transport->args;
 
     size_t read = 0;
     int spent_time = 0;
 
-    while(ring_buf_is_empty(&in_ringbuf) && spent_time < timeout){
+    while (ring_buf_is_empty(&in_ringbuf) && spent_time < timeout) {
         k_sleep(K_MSEC(1));
         spent_time++;
     }
